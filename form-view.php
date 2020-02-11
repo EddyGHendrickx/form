@@ -2,53 +2,62 @@
 
 declare(strict_types=1);
 
-
 //Catching initial load error
 if (!(isset($_GET['food']))) {
     $_GET['food'] = 1;
 }
 
+if (!(isset($_COOKIE["totalOrder"]))){
+    $_COOKIE["totalOrder"] = 0;
+}
+
 //Catching initial load error
 if (isset($_POST['products'])) {
     $checkedBoxes = $_POST['products'];
+} else {
+    $checkedBoxes = [];
 }
 
-// Get the price of checked boxes with food
-$totalOrder = [];
-for ($i = 0; count($products[$_GET['food']]) > $i; $i++){
-    if (isset($checkedBoxes[$i])){
-        array_push($totalOrder ,$products[$_GET['food']][$i]['price']);
+// Function to get the price of checked boxes in array
+function getPrice(array $inputArray, array $checkBox): float
+{
+    $totalOrder = [];
+
+    for ($i = 0; count($inputArray[$_GET['food']]) > $i; $i++) {
+        if (isset($checkBox[$i])) {
+            array_push($totalOrder, $inputArray[$_GET['food']][$i]['price']);
+        }
     }
+    return array_sum($totalOrder);
 }
-$totalPrice = array_sum($totalOrder);
 
-setcookie("totalOrder", strval($totalPrice));
-
-//  When the form is submitted
+//  When the form is submitted, check for empty fields
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $errorArray = [];
     if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
         $emailErr = "E-mail is required";
         $email = "";
         array_push($errorArray, $emailErr);
-        echo "<p class='btn-danger'>" . $emailErr . "</p>";
+        $emailErrHTML = "<p class='alert alert-success position-relative'> Email is required </p>";
     } else {
         $email = $_POST["email"];
         $_SESSION["email"] = $email;
         $emailErr = "";
         array_push($errorArray, $emailErr);
+        $emailErrHTML = "<p class='alert alert-success position-relative'> Field is ok </p>";
     }
 
     if (empty($_POST["street"])) {
         $streetErr = "Street name is required";
         array_push($errorArray, $streetErr);
-        echo "<p class='btn-danger'>" . $streetErr . "</p>";
+        $streetErrHTML = "<p class='alert alert-danger position-relative'> Street name is required </p>";
 
     } else {
         $street = ($_POST["street"]);
         $_SESSION["street"] = $street;
         $streetErr = "";
         array_push($errorArray, $streetErr);
+        $streetErrHTML = "<p class='alert alert-success position-relative'> Field ok </p>";
     }
 
     if (empty($_POST["streetNumber"])) {
@@ -57,10 +66,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         echo "<p class='btn-danger'>" . $streetNumberErr . "</p>";
 
     } else {
-        $streetNumberErr = "";
-        $streetNumber = ($_POST["streetNumber"]);
-        $_SESSION["streetNumber"] = $streetNumberErr;
-        array_push($errorArray, $emailErr);
+        if (ctype_digit($_POST["streetNumber"])) {
+            $streetNumberErr = "";
+            $streetNumber = ($_POST["streetNumber"]);
+            $_SESSION["streetNumber"] = $streetNumberErr;
+            array_push($errorArray, $emailErr);
+        } else {
+            $streetNumberErr = "Please enter a valid street number";
+            $_SESSION["streetNumber"] = "";
+            array_push($errorArray, $streetNumberErr);
+        }
     }
 
     if (empty($_POST["city"])) {
@@ -92,11 +107,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $deliveryTime = "in 45 mins";
     }
     if (hasNoErrors($errorArray)) {
-        echo "<p class='bg-success'> Your order will be delivered " . $deliveryTime. "</p>";
-        $totalValue = $totalPrice;
+        echo "<p class='bg-success'> Your order will be delivered " . $deliveryTime . "</p>";
+        $totalValue = getPrice($products, $checkedBoxes);
         $subject = 'Your delivery';
-        $message = 'Thank you for your order. Please be ready to pay'. $totalPrice .'The estimated delivery time will be '. $deliveryTime;
+        $message = 'Thank you for your order. Please be ready to pay' . getPrice($products, $checkedBoxes) . 'The estimated delivery time will be ' . $deliveryTime;
         mail($email, $subject, $message);
+
+        // Get the price of checked boxes with food
+        if (!(isset($_COOKIE['totalOrder']))) {
+            setcookie("totalOrder", strval(getPrice($products, $checkedBoxes)));
+        } else {
+            $totalPrice = $_COOKIE['totalOrder'] + getPrice($products, $checkedBoxes);
+            setcookie("totalOrder", strval((getPrice($products, $checkedBoxes))+$_COOKIE['totalOrder']));
+        }
     } else {
 
         echo "There are some errors, check the document again";
@@ -117,7 +140,6 @@ function hasNoErrors(array $array): bool
     }
     return true;
 }
-
 
 ?>
 
@@ -162,7 +184,7 @@ function hasNoErrors(array $array): bool
                 <div class="form-group col-md-6">
                     <label for="street">Street:</label>
                     <input type="text" name="street" id="street" class="form-control"
-                           value="<?php echo $_SESSION['street'] ?>">
+                           value="<?php echo $_SESSION['street'] ?>"><?php echo isset($streetErrHTML) ? $streetErrHTML : ""; ?>
                 </div>
                 <div class="form-group col-md-6">
                     <label for="streetnumber">Street number:</label>
@@ -198,7 +220,8 @@ function hasNoErrors(array $array): bool
         <button type="submit" class="btn btn-primary" name="submit">Order!</button>
     </form>
 
-    <footer>You already ordered <strong>&euro; <?php echo $_COOKIE["totalOrder"] ?></strong> in food and drinks.</footer>
+    <footer>You already ordered <strong>&euro; <?php echo $_COOKIE['totalOrder'] ?></strong> in food and drinks.
+    </footer>
 </div>
 
 <style>
