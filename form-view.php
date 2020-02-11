@@ -2,25 +2,29 @@
 
 declare(strict_types=1);
 
+
+//Catching initial load error
 if (!(isset($_GET['food']))) {
     $_GET['food'] = 1;
 }
 
-
+//Catching initial load error
 if (isset($_POST['products'])) {
     $checkedBoxes = $_POST['products'];
 }
 
-$totalPrice = [];
-
+// Get the price of checked boxes with food
+$totalOrder = [];
 for ($i = 0; count($products[$_GET['food']]) > $i; $i++){
-    var_dump($products[$_GET['food']]);
     if (isset($checkedBoxes[$i])){
-        array_push($totalPrice,$products[$_GET['food']][$i]['price']);
+        array_push($totalOrder ,$products[$_GET['food']][$i]['price']);
     }
-
 }
+$totalPrice = array_sum($totalOrder);
 
+setcookie("totalOrder", strval($totalPrice));
+
+//  When the form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $errorArray = [];
     if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
@@ -88,7 +92,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $deliveryTime = "in 45 mins";
     }
     if (hasNoErrors($errorArray)) {
-        echo "Your order will be delivered " . $deliveryTime;
+        echo "<p class='bg-success'> Your order will be delivered " . $deliveryTime. "</p>";
+        $totalValue = $totalPrice;
+        $subject = 'Your delivery';
+        $message = 'Thank you for your order. Please be ready to pay'. $totalPrice .'The estimated delivery time will be '. $deliveryTime;
+        mail($email, $subject, $message);
     } else {
 
         echo "There are some errors, check the document again";
@@ -190,7 +198,7 @@ function hasNoErrors(array $array): bool
         <button type="submit" class="btn btn-primary" name="submit">Order!</button>
     </form>
 
-    <footer>You already ordered <strong>&euro; <?php echo $totalValue ?></strong> in food and drinks.</footer>
+    <footer>You already ordered <strong>&euro; <?php echo $_COOKIE["totalOrder"] ?></strong> in food and drinks.</footer>
 </div>
 
 <style>
