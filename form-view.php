@@ -38,7 +38,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $emailErr = "E-mail is required";
         $email = "";
         array_push($errorArray, $emailErr);
-        $emailErrHTML = "<p class='alert alert-success position-relative'> Email is required </p>";
+        $emailErrHTML = "<p class='alert alert-danger position-relative'> Email is required </p>";
     } else {
         $email = $_POST["email"];
         $_SESSION["email"] = $email;
@@ -63,7 +63,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($_POST["streetNumber"])) {
         $streetNumberErr = "Fill out a street number";
         array_push($errorArray, $streetNumberErr);
-        echo "<p class='btn-danger'>" . $streetNumberErr . "</p>";
+        $streetNumberErrHTML = "<p class='alert alert-danger position-relative'> Street number is required </p>";
 
     } else {
         if (ctype_digit($_POST["streetNumber"])) {
@@ -71,33 +71,37 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $streetNumber = ($_POST["streetNumber"]);
             $_SESSION["streetNumber"] = $streetNumberErr;
             array_push($errorArray, $emailErr);
+            $streetNumberErrHTML = "<p class='alert alert-success position-relative'> Field ok </p>";
         } else {
             $streetNumberErr = "Please enter a valid street number";
             $_SESSION["streetNumber"] = "";
             array_push($errorArray, $streetNumberErr);
+            $streetNumberErrHTML = "<p class='alert alert-danger position-relative'> Please enter a valid street number </p>";
         }
     }
 
     if (empty($_POST["city"])) {
         $cityErr = "Fill out a valid city.";
         array_push($errorArray, $cityErr);
-        echo "<p class='btn-danger'>" . $cityErr . "</p>";
+        $cityErrHTML = "<p class='alert alert-danger position-relative'> Please enter a city </p>";
 
     } else {
         $city = ($_POST["city"]);
         $_SESSION["city"] = $city;
         $cityErr = "";
         array_push($errorArray, $cityErr);
+        $cityErrHTML = "<p class='alert alert-success position-relative'> Field ok </p>";
     }
     if (empty($_POST["zipcode"])) {
         $zipcodeErr = "Fill out a valid zipcode.";
         array_push($errorArray, $zipcodeErr);
-        echo "<p class='btn-danger'>" . $zipcodeErr . "</p>";
+        $zipcodeErrHTML = "<p class='alert alert-danger position-relative'> Please enter a valid zipcode </p>";
     } else {
         $zipcode = ($_POST["zipcode"]);
         $_SESSION["zipcode"] = $zipcode;
         $zipcodeErr = "";
         array_push($errorArray, $zipcodeErr);
+        $zipcodeErrHTML = "<p class='alert alert-success position-relative'> Field ok </p>";
     }
     if (empty($_POST['express'])) {
         $_GET['express'] = 0;
@@ -173,6 +177,7 @@ function hasNoErrors(array $array): bool
                 <label for="email">E-mail:</label>
                 <input type="text" id="email" name="email" value="<?php echo $_SESSION['email'] ?>"
                        class="form-control"/>
+                <?php echo isset($emailErrHTML) ? $emailErrHTML : ""; ?>
             </div>
             <div></div>
         </div>
@@ -190,6 +195,7 @@ function hasNoErrors(array $array): bool
                     <label for="streetnumber">Street number:</label>
                     <input type="number" id="streetnumber" name="streetNumber"
                            value="<?php echo $_SESSION['streetNumber'] ?>" class="form-control">
+                    <?php echo isset($streetNumberErrHTML) ? $streetNumberErrHTML : ""; ?>
                 </div>
             </div>
             <div class="form-row">
@@ -197,11 +203,13 @@ function hasNoErrors(array $array): bool
                     <label for="city">City:</label>
                     <input type="text" id="city" name="city" class="form-control"
                            value="<?php echo $_SESSION['city'] ?>">
+                    <?php echo isset($cityErrHTML) ? $cityErrHTML : ""; ?>
                 </div>
                 <div class="form-group col-md-6">
                     <label for="zipcode">Zipcode</label>
                     <input type="number" id="zipcode" name="zipcode" class="form-control"
                            value="<?php echo $_SESSION['zipcode'] ?>">
+                    <?php echo isset($zipcodeErrHTML) ? $zipcodeErrHTML : ""; ?>
                 </div>
             </div>
         </fieldset>
@@ -220,7 +228,7 @@ function hasNoErrors(array $array): bool
         <button type="submit" class="btn btn-primary" name="submit">Order!</button>
     </form>
 
-    <footer>You already ordered <strong>&euro; <?php echo $_COOKIE['totalOrder'] ?></strong> in food and drinks.
+    <footer>You already ordered <strong>&euro; <?php echo isset($totalPrice) ? $totalPrice : "0"; ?></strong> in food and drinks.
     </footer>
 </div>
 
